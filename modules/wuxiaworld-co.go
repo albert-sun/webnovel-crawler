@@ -43,7 +43,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 
 	const searchURLFmt = "https://www.wuxiaworld.co/search/%s/%d" // formatting for search URL
 	const resultsQuery = ".list-item .item-info"                  // info for each search result
-	escapedTerm := url.QueryEscape(searchTerm)                    // URL-encode escape for search
+	escapedTerm := url.PathEscape(searchTerm)                     // URL-encode escape for search
 
 	var totalResults int
 	var pagesResult [][]downloader.NovelBasic // slice of slices of results from each page
@@ -90,7 +90,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 			pageResults[index] = downloader.NovelBasic{
 				Name:     novelName,
 				NameTrim: trimmed,
-				NovelURL: m.WebsiteURL + novelURL,
+				NovelURL: fmt.Sprintf("https://%s%s", m.WebsiteURL, novelURL),
 			}
 		})
 		if foundErr != nil { // return if error caught
@@ -121,6 +121,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	// retrieve synopsis page information
 	response, err := utilities.RequestGET(&httpClient, basic.NovelURL)
 	if err != nil { // return if request error
+		fmt.Println(err.Error())
 		return nil, downloader.RequestError
 	}
 	respReader := bytes.NewReader(response.Body()) // performance issue?

@@ -9,7 +9,7 @@ func Test_WuxiaWorldCo_Search(t *testing.T) {
 	// query random common word and check results
 	results, err := modules.Mod_WuxiaWorldCo.Search("divine")
 	if err != nil {
-		t.Errorf("[wuxiaworld.co] Error during search.")
+		t.Errorf("[wuxiaworld.co] Error during search: %s.", err.Error())
 		return
 	}
 
@@ -28,7 +28,7 @@ func Test_WuxiaWorldCo_Info(t *testing.T) {
 
 	info, err := modules.Mod_WuxiaWorldCo.NovelInfo(results[1])
 	if err != nil {
-		t.Errorf("[wuxiaworld.co] Error during novel info retrieval")
+		t.Errorf("[wuxiaworld.co] Error during novel info retrieval: %s.", err.Error())
 		return
 	}
 
