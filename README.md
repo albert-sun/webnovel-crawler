@@ -13,7 +13,7 @@ The below table lists current support for websites along with development remark
 | 🕒 | Development in-progress |
 | ⚠️ | Current issues being resolved (check remarks) |
 
-| Name | Type | Language(s) | Support | Remarks |
+| Website | Type | Language(s) | Support | Remarks |
 |:-----|:-----|:------------|:-------:|:--------|
 | WuxiaWorld.co | Aggregate | Chinese | 🕒 ||
 
@@ -48,4 +48,4 @@ if err != nil {
 ## Contributions
 Contributions are always appreciated, especially in the form of new modules for websites and export formats. Thank you for your help!
 
-Released under the GNU General Public License
+**Released under the GNU General Public License.**
