@@ -14,8 +14,8 @@ import (
 // WuxiaWorld.co (Chinese) (Aggregate) - wuxiaworld.co
 // Last Updated: 11/5/2020
 // ===============================
-// [ ] Search       [ ] Download
-// [ ] Novel Info   [ ] Test cases
+// [X] Search       [ ] Download
+// [X] Novel Info   [ ] Test cases
 // ===============================
 // Remarks:
 // -
