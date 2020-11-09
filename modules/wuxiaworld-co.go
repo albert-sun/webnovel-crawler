@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/cockroachdb/errors"
 	"github.com/valyala/fasthttp"
 	"net/url"
 )
@@ -52,7 +53,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 		searchURL := fmt.Sprintf(searchURLFmt, escapedTerm, pageNum)
 		response, err := utilities.RequestGET(&httpClient, searchURL)
 		if err != nil { // return if request error
-			return nil, downloader.RequestError
+			return nil, downloader.ErrRequest
 		}
 		respReader := bytes.NewReader(response.Body()) // performance issue?
 		fasthttp.ReleaseResponse(response)
@@ -60,7 +61,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 		// parse HTML for querying purposes
 		document, err := goquery.NewDocumentFromReader(respReader)
 		if err != nil { // return if request error
-			return nil, downloader.ParseHTMLError
+			return nil, downloader.ErrParseHTML
 		}
 
 		// query search results from document
@@ -83,14 +84,14 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 			trimmed := utilities.TrimString(novelName) // trim uppercase and special characters
 			novelURL, exists := aElement.Attr("href")
 			if !exists { // return if attribute not found
-				foundErr = downloader.GoQueryError
+				foundErr = errors.Wrapf(downloader.ErrGoQuery, "get novel URL")
 				return
 			}
 
 			pageResults[index] = downloader.NovelBasic{
 				Name:     novelName,
 				NameTrim: trimmed,
-				NovelURL: fmt.Sprintf("https://%s%s", m.WebsiteURL, novelURL),
+				NovelURL: fmt.Sprintf("https://www.%s%s", m.WebsiteURL, novelURL),
 			}
 		})
 		if foundErr != nil { // return if error caught
@@ -121,8 +122,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	// retrieve synopsis page information
 	response, err := utilities.RequestGET(&httpClient, basic.NovelURL)
 	if err != nil { // return if request error
-		fmt.Println(err.Error())
-		return nil, downloader.RequestError
+		return nil, downloader.ErrRequest
 	}
 	respReader := bytes.NewReader(response.Body()) // performance issue?
 	fasthttp.ReleaseResponse(response)
@@ -130,14 +130,14 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	// parse HTML for querying purposes
 	document, err := goquery.NewDocumentFromReader(respReader)
 	if err != nil { // return if request error
-		return nil, downloader.ParseHTMLError
+		return nil, downloader.ErrParseHTML
 	}
 
 	// query author name from document
 	authorQuery := ".name"
 	searchResults := document.Find(authorQuery)
 	if len(searchResults.Nodes) == 0 { // author name not found
-		return nil, downloader.GoQueryError
+		return nil, errors.Wrapf(downloader.ErrGoQuery, "get novel name")
 	}
 	author := searchResults.Text() // should capture only author name
 
@@ -145,7 +145,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	statusQuery := ".book-state .txt"
 	searchResults = document.Find(statusQuery)
 	if len(searchResults.Nodes) == 0 { // status name not found
-		return nil, downloader.GoQueryError
+		return nil, errors.Wrapf(downloader.ErrGoQuery, "get novel status")
 	}
 	status := searchResults.Text() // should capture only author name
 
@@ -156,7 +156,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	chapterQuery := ".chapter-item" // all chapter a-href
 	searchResults = document.Find(chapterQuery)
 	if len(searchResults.Nodes) == 0 { // chapters not found
-		return nil, downloader.GoQueryError
+		return nil, errors.Wrapf(downloader.ErrGoQuery, "get chapter elements")
 	}
 
 	var foundErr error // for errors caught during iteration
@@ -169,7 +169,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 
 		chapterURL, exists := sel.Attr("href")
 		if !exists {
-			foundErr = downloader.GoQueryError
+			foundErr = errors.Wrapf(downloader.ErrGoQuery, "get chapter URLS")
 			return
 		}
 
