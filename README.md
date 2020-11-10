@@ -15,7 +15,7 @@ The below table lists current support for websites along with development remark
 
 | Website | Type | Language(s) | Support | Remarks |
 |:-----|:-----|:------------|:-------:|:--------|
-| WuxiaWorld.co | Aggregate | Chinese | 🕒 ||
+| WuxiaWorld.co | Aggregate | Chinese | 🕒 | Touching-up and working on PDF/EPUB export |
 
 
 ## Quickstart Guide
