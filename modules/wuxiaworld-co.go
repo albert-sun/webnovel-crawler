@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/valyala/fasthttp"
 	"net/url"
+	"strings"
 )
 
 // WuxiaWorld.co (Chinese) (Aggregate) - wuxiaworld.co
@@ -23,7 +24,6 @@ import (
 // Main downloader struct
 type WuxiaWorldCo struct {
 	downloader.BasicDownloader
-	downloader.WebDownloader
 }
 
 // Exported module variable
@@ -173,16 +173,103 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 			return
 		}
 
-		chapterURLs[index] = chapterURL
+		chapterURLs[index] = fmt.Sprintf("https://www.%s%s", m.WebsiteURL, chapterURL)
 	})
 
 	info := downloader.NovelInfo{
-		NovelBasic: basic,
-		Author:     author,
-		Status:     status,
-		Language:   language,
-		Chapters:   chapterURLs,
+		NovelBasic:  basic,
+		Author:      author,
+		Status:      status,
+		Language:    language,
+		ChapterURLs: chapterURLs,
 	}
 
 	return &info, nil
+}
+
+func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
+	// assume that index is valid btw
+	defer dlInfo.SWG.Done()
+
+	// check for existence of previous error
+	if *dlInfo.FoundErr != nil {
+		return
+	}
+
+	httpClient := fasthttp.Client{} // eventually replace with "global" usage
+
+	// retrieve chapter page
+	response, err := utilities.RequestGET(&httpClient, dlInfo.NovelInfo.ChapterURLs[dlInfo.Index])
+	if err != nil { // return if request error
+		if *dlInfo.FoundErr != nil { // check if previous error
+			*dlInfo.FoundErr = errors.Wrapf(downloader.ErrRequest, "chapter %d", dlInfo.Index)
+		}
+		return
+	}
+	respReader := bytes.NewReader(response.Body()) // performance issue?
+	fasthttp.ReleaseResponse(response)
+
+	// parse HTML for querying purposes
+	document, err := goquery.NewDocumentFromReader(respReader)
+	if err != nil { // return if request error
+		if *dlInfo.FoundErr != nil { // check if previous error
+			*dlInfo.FoundErr = errors.Wrapf(downloader.ErrParseHTML, "chapter %d", dlInfo.Index)
+		}
+		return
+	}
+
+	// query chapter title from document
+	titleQuery := ".chapter-title"
+	searchResults := document.Find(titleQuery)
+	if len(searchResults.Nodes) == 0 { // title not found
+		if *dlInfo.FoundErr != nil { // check if previous error
+			*dlInfo.FoundErr = errors.Wrapf(
+				downloader.ErrParseHTML,
+				"chapter %d: get chapter title",
+				dlInfo.Index,
+			)
+		}
+		return
+	}
+	chapterTitle := searchResults.Text()
+
+	// query chapter content from document
+	// note: contains ad content, not sure how parsing works
+	contentQuery := ".chapter-entity"
+	searchResults = document.Find(contentQuery)
+	if len(searchResults.Nodes) == 0 { // title not found
+		if *dlInfo.FoundErr != nil { // check if previous error
+			*dlInfo.FoundErr = errors.Wrapf(
+				downloader.ErrParseHTML,
+				"chapter %d: get chapter content",
+				dlInfo.Index,
+			)
+		}
+		return
+	}
+
+	// iterate over div content and splice out br and script
+	// ensure that only one newline between lines using fancy boolean
+	flipNewline := true // prevents unneeded newlines
+	var chapterContent string
+	searchResults.Contents().Each(func(_ int, sel *goquery.Selection) {
+		// replace br with newline, add trimmed content
+		if sel.Is("br") && !flipNewline {
+			flipNewline = true
+			chapterContent += "\n"
+		} else if !sel.Is("script") { // skip script
+			flipNewline = false
+			content := sel.Text()
+
+			// skip annoying "please go to wuxiaworld.co" thing
+			if !strings.HasPrefix(content, "Please go tohttps") {
+				chapterContent += strings.TrimSpace(sel.Text())
+			}
+		}
+	})
+
+	dlInfo.Chapters[dlInfo.Index-dlInfo.Start] = &downloader.NovelChapter{
+		Title:   chapterTitle,
+		Content: chapterContent,
+	}
 }

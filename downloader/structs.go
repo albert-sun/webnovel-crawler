@@ -1,7 +1,10 @@
 package downloader
 
+import "github.com/remeh/sizedwaitgroup"
+
 // BasicDownloader holds a basic info and utility functions for downloader modules.
 type BasicDownloader struct {
+	WebDownloader
 	WebsiteName string   // website name
 	WebsiteURL  string   // website URL
 	Languages   []string // website languages (original or translated)
@@ -12,9 +15,9 @@ type BasicDownloader struct {
 // WebDownloader represents an individual website downloader "module".
 // Contains functions for retrieval, search, etc. and metadata.
 type WebDownloader interface {
-	Search(string) ([]NovelBasic, error)      // searches website using the given query string
-	NovelInfo(NovelBasic) (*NovelInfo, error) // retrieves information from a novel page
-	Download(string) (*NovelChapter, error)   // downloads a novel chapter given its URL
+	Search(string) ([]NovelBasic, error) // searches website using the given query string
+	NovelInfo(NovelBasic) (*NovelInfo, error)
+	Download(info DownloadInfo) // retrieves information from a novel page
 }
 
 // NovelBasic represents a novel's basic metadata.
@@ -28,14 +31,25 @@ type NovelBasic struct {
 // NovelInfo represents an individual novel (from a website).
 // Contains metadata and slice of chapter URLs for easy access.
 type NovelInfo struct {
-	NovelBasic          // basic metadata
-	Author     string   // Author name (hopefully english?)
-	Status     string   // Ongoing, Completed, Dropped (?)
-	Language   string   // Novel (translated from) language / English
-	Chapters   []string // Novel chapter URLs (how to best number?)
+	NovelBasic           // basic metadata
+	Author      string   // Author name (hopefully english?)
+	Status      string   // Ongoing, Completed, Dropped (?)
+	Language    string   // Novel (translated from) language / English
+	ChapterURLs []string // Novel chapter URLs (how to best number?)
 }
 
 // NovelChapter represents the content of a novel chapter.
 type NovelChapter struct {
-	Content string
+	Title   string // chapter title
+	Content string // actual content
+}
+
+// DownloadInfo contains info for downloading a given chapter
+type DownloadInfo struct {
+	SWG       *sizedwaitgroup.SizedWaitGroup
+	Chapters  []*NovelChapter // downloaded chapters
+	NovelInfo *NovelInfo      // novel stuff
+	Start     int             // starting index
+	Index     int             // index of chapters
+	FoundErr  *error          // global error thing?
 }
