@@ -21,13 +21,15 @@ import (
 // -
 
 // Main downloader struct
-type WuxiaWorldCo struct {
+type modWuxiaWorldCo struct {
 	BasicDownloader
 }
 
 // Exported module variable
-var Mod_WuxiaWorldCo = func() *WuxiaWorldCo {
-	return &WuxiaWorldCo{
+var WuxiaWorldCo *modWuxiaWorldCo
+
+func init() {
+	WuxiaWorldCo = &modWuxiaWorldCo{
 		BasicDownloader: BasicDownloader{
 			WebsiteName: "WuxiaWorld.co",
 			WebsiteURL:  "wuxiaworld.co",
@@ -36,9 +38,10 @@ var Mod_WuxiaWorldCo = func() *WuxiaWorldCo {
 			LastUpdated: "11/5/2020",
 		},
 	}
-}()
+	Modules = append(Modules, WuxiaWorldCo)
+}
 
-func (m WuxiaWorldCo) Search(searchTerm string) ([]NovelBasic, error) {
+func (m modWuxiaWorldCo) Search(searchTerm string) ([]NovelBasic, error) {
 	httpClient := fasthttp.Client{} // eventually replace with "global" usage
 
 	const searchURLFmt = "https://www.wuxiaworld.co/search/%s/%d" // formatting for search URL
@@ -115,7 +118,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]NovelBasic, error) {
 	return arrangedResults, nil
 }
 
-func (m WuxiaWorldCo) NovelInfo(basic NovelBasic) (*NovelInfo, error) {
+func (m modWuxiaWorldCo) NovelInfo(basic NovelBasic) (*NovelInfo, error) {
 	httpClient := fasthttp.Client{} // eventually replace with "global" usage
 
 	// retrieve synopsis page information
@@ -186,7 +189,7 @@ func (m WuxiaWorldCo) NovelInfo(basic NovelBasic) (*NovelInfo, error) {
 	return &info, nil
 }
 
-func (m WuxiaWorldCo) Download(dlInfo DownloadInfo) {
+func (m modWuxiaWorldCo) Download(dlInfo DownloadInfo) {
 	// assume that index is valid btw
 	// check for existence of previous error
 	if *dlInfo.FoundErr != nil {
