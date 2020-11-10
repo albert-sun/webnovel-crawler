@@ -1,7 +1,6 @@
-package modules
+package downloader
 
 import (
-	"akito/downloader"
 	"akito/utilities"
 	"bytes"
 	"fmt"
@@ -23,13 +22,13 @@ import (
 
 // Main downloader struct
 type WuxiaWorldCo struct {
-	downloader.BasicDownloader
+	BasicDownloader
 }
 
 // Exported module variable
 var Mod_WuxiaWorldCo = func() *WuxiaWorldCo {
 	return &WuxiaWorldCo{
-		BasicDownloader: downloader.BasicDownloader{
+		BasicDownloader: BasicDownloader{
 			WebsiteName: "WuxiaWorld.co",
 			WebsiteURL:  "wuxiaworld.co",
 			Languages:   []string{"Chinese"},
@@ -39,7 +38,7 @@ var Mod_WuxiaWorldCo = func() *WuxiaWorldCo {
 	}
 }()
 
-func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error) {
+func (m WuxiaWorldCo) Search(searchTerm string) ([]NovelBasic, error) {
 	httpClient := fasthttp.Client{} // eventually replace with "global" usage
 
 	const searchURLFmt = "https://www.wuxiaworld.co/search/%s/%d" // formatting for search URL
@@ -47,13 +46,13 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 	escapedTerm := url.PathEscape(searchTerm)                     // URL-encode escape for search
 
 	var totalResults int
-	var pagesResult [][]downloader.NovelBasic // slice of slices of results from each page
-	for pageNum := 1; ; pageNum++ {           // forever, iterate while search results exist
+	var pagesResult [][]NovelBasic  // slice of slices of results from each page
+	for pageNum := 1; ; pageNum++ { // forever, iterate while search results exist
 		// perform search request
 		searchURL := fmt.Sprintf(searchURLFmt, escapedTerm, pageNum)
 		response, err := utilities.RequestGET(&httpClient, searchURL)
 		if err != nil { // return if request error
-			return nil, downloader.ErrRequest
+			return nil, ErrRequest
 		}
 		respReader := bytes.NewReader(response.Body()) // performance issue?
 		fasthttp.ReleaseResponse(response)
@@ -61,7 +60,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 		// parse HTML for querying purposes
 		document, err := goquery.NewDocumentFromReader(respReader)
 		if err != nil { // return if request error
-			return nil, downloader.ErrParseHTML
+			return nil, ErrParseHTML
 		}
 
 		// query search results from document
@@ -69,7 +68,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 		if len(searchResults.Nodes) == 0 { // no more results - none or last page
 			break
 		}
-		pageResults := make([]downloader.NovelBasic, len(searchResults.Nodes))
+		pageResults := make([]NovelBasic, len(searchResults.Nodes))
 
 		// iterate over query result and get info
 		var foundErr error // for errors caught during iteration
@@ -84,11 +83,11 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 			trimmed := utilities.TrimString(novelName) // trim uppercase and special characters
 			novelURL, exists := aElement.Attr("href")
 			if !exists { // return if attribute not found
-				foundErr = errors.Wrapf(downloader.ErrGoQuery, "get novel URL")
+				foundErr = errors.Wrapf(ErrGoQuery, "get novel URL")
 				return
 			}
 
-			pageResults[index] = downloader.NovelBasic{
+			pageResults[index] = NovelBasic{
 				Name:     novelName,
 				NameTrim: trimmed,
 				NovelURL: fmt.Sprintf("https://www.%s%s", m.WebsiteURL, novelURL),
@@ -105,7 +104,7 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 	// transform results from 2-dim to 1-dim slice
 	// I know it's disgusting, I'd love to find an easier way
 	var currentIndex int
-	arrangedResults := make([]downloader.NovelBasic, totalResults)
+	arrangedResults := make([]NovelBasic, totalResults)
 	for _, pageResults := range pagesResult {
 		for _, result := range pageResults {
 			arrangedResults[currentIndex] = result
@@ -116,13 +115,13 @@ func (m WuxiaWorldCo) Search(searchTerm string) ([]downloader.NovelBasic, error)
 	return arrangedResults, nil
 }
 
-func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelInfo, error) {
+func (m WuxiaWorldCo) NovelInfo(basic NovelBasic) (*NovelInfo, error) {
 	httpClient := fasthttp.Client{} // eventually replace with "global" usage
 
 	// retrieve synopsis page information
 	response, err := utilities.RequestGET(&httpClient, basic.NovelURL)
 	if err != nil { // return if request error
-		return nil, downloader.ErrRequest
+		return nil, ErrRequest
 	}
 	respReader := bytes.NewReader(response.Body()) // performance issue?
 	fasthttp.ReleaseResponse(response)
@@ -130,14 +129,14 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	// parse HTML for querying purposes
 	document, err := goquery.NewDocumentFromReader(respReader)
 	if err != nil { // return if request error
-		return nil, downloader.ErrParseHTML
+		return nil, ErrParseHTML
 	}
 
 	// query author name from document
 	authorQuery := ".name"
 	searchResults := document.Find(authorQuery)
 	if len(searchResults.Nodes) == 0 { // author name not found
-		return nil, errors.Wrapf(downloader.ErrGoQuery, "get novel name")
+		return nil, errors.Wrapf(ErrGoQuery, "get novel name")
 	}
 	author := searchResults.Text() // should capture only author name
 
@@ -145,7 +144,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	statusQuery := ".book-state .txt"
 	searchResults = document.Find(statusQuery)
 	if len(searchResults.Nodes) == 0 { // status name not found
-		return nil, errors.Wrapf(downloader.ErrGoQuery, "get novel status")
+		return nil, errors.Wrapf(ErrGoQuery, "get novel status")
 	}
 	status := searchResults.Text() // should capture only author name
 
@@ -156,7 +155,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	chapterQuery := ".chapter-item" // all chapter a-href
 	searchResults = document.Find(chapterQuery)
 	if len(searchResults.Nodes) == 0 { // chapters not found
-		return nil, errors.Wrapf(downloader.ErrGoQuery, "get chapter elements")
+		return nil, errors.Wrapf(ErrGoQuery, "get chapter elements")
 	}
 
 	var foundErr error // for errors caught during iteration
@@ -169,14 +168,14 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 
 		chapterURL, exists := sel.Attr("href")
 		if !exists {
-			foundErr = errors.Wrapf(downloader.ErrGoQuery, "get chapter URLS")
+			foundErr = errors.Wrapf(ErrGoQuery, "get chapter URLS")
 			return
 		}
 
 		chapterURLs[index] = fmt.Sprintf("https://www.%s%s", m.WebsiteURL, chapterURL)
 	})
 
-	info := downloader.NovelInfo{
+	info := NovelInfo{
 		NovelBasic:  basic,
 		Author:      author,
 		Status:      status,
@@ -187,7 +186,7 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 	return &info, nil
 }
 
-func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
+func (m WuxiaWorldCo) Download(dlInfo DownloadInfo) {
 	// assume that index is valid btw
 	// check for existence of previous error
 	if *dlInfo.FoundErr != nil {
@@ -200,7 +199,7 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	response, err := utilities.RequestGET(&httpClient, dlInfo.NovelInfo.ChapterURLs[dlInfo.Index])
 	if err != nil { // return if request error
 		if *dlInfo.FoundErr != nil { // check if previous error
-			*dlInfo.FoundErr = errors.Wrapf(downloader.ErrRequest, "chapter %d", dlInfo.Index)
+			*dlInfo.FoundErr = errors.Wrapf(ErrRequest, "chapter %d", dlInfo.Index)
 		}
 		return
 	}
@@ -213,7 +212,7 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	document, err := goquery.NewDocumentFromReader(respReader)
 	if err != nil { // return if request error
 		if *dlInfo.FoundErr != nil { // check if previous error
-			*dlInfo.FoundErr = errors.Wrapf(downloader.ErrParseHTML, "chapter %d", dlInfo.Index)
+			*dlInfo.FoundErr = errors.Wrapf(ErrParseHTML, "chapter %d", dlInfo.Index)
 		}
 		return
 	}
@@ -224,7 +223,7 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	if len(searchResults.Nodes) == 0 { // title not found
 		if *dlInfo.FoundErr != nil { // check if previous error
 			*dlInfo.FoundErr = errors.Wrapf(
-				downloader.ErrParseHTML,
+				ErrParseHTML,
 				"chapter %d: get chapter title",
 				dlInfo.Index,
 			)
@@ -240,7 +239,7 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	if len(searchResults.Nodes) == 0 { // title not found
 		if *dlInfo.FoundErr != nil { // check if previous error
 			*dlInfo.FoundErr = errors.Wrapf(
-				downloader.ErrParseHTML,
+				ErrParseHTML,
 				"chapter %d: get chapter content",
 				dlInfo.Index,
 			)
@@ -268,7 +267,7 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 		}
 	})
 
-	dlInfo.Chapters[dlInfo.Index-dlInfo.Start] = &downloader.NovelChapter{
+	dlInfo.Chapters[dlInfo.Index-dlInfo.Start] = &NovelChapter{
 		Title:   chapterTitle,
 		Content: chapterContent,
 	}
