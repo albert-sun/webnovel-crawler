@@ -1,11 +1,10 @@
 package downloader
 
 import (
-	"fmt"
 	"github.com/remeh/sizedwaitgroup"
 )
 
-const maxDownloads = 10 // number of "threads"
+const maxDownloads = 100 // number of "threads"
 
 // DownloadRange downloads a range of chapters for a novel given the starting and ending index.
 // Note that both the starting and ending index are zero-indexed instead of one-indexed from the user.
@@ -37,7 +36,7 @@ func DownloadRange(dl WebDownloader, info *NovelInfo, start int, end int) ([]*No
 
 	swg.Wait() // wait for downloads to finish
 
-	if foundErr != nil {
+	if foundErr == nil {
 		return downloaded, nil
 	}
 

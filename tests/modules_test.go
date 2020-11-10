@@ -3,6 +3,8 @@ package main
 import (
 	"akito/downloader"
 	"akito/modules"
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -62,9 +64,23 @@ func Test_WuxiaWorldCo_Download(t *testing.T) {
 	}
 
 	// note that start and end are zero-indexed
-	_, err = downloader.DownloadRange(modules.Mod_WuxiaWorldCo, info, 0, 2)
+	chapters, err := downloader.DownloadRange(modules.Mod_WuxiaWorldCo, info, 0, len(info.ChapterURLs)-1)
 	if err != nil {
 		t.Errorf("[wuxiaworld.co] Error during chapter download: %s.", err.Error())
 		return
+	}
+
+	fmt.Println(len(chapters))
+	testFile, err := os.Create("downloaded.txt")
+	if err != nil {
+		panic(err)
+	}
+	for _, chapter := range chapters {
+		_, _ = testFile.WriteString(fmt.Sprintf("== %s ==", chapter.Title))
+		_, _ = testFile.WriteString("\n")
+		_, _ = testFile.WriteString(chapter.Content)
+		_, _ = testFile.WriteString("\n")
+		_, _ = testFile.WriteString("\n=======================================\n")
+		_, _ = testFile.WriteString("\n")
 	}
 } // Tests wuxiaworld.co singular chapter download

@@ -189,8 +189,6 @@ func (m WuxiaWorldCo) NovelInfo(basic downloader.NovelBasic) (*downloader.NovelI
 
 func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	// assume that index is valid btw
-	defer dlInfo.SWG.Done()
-
 	// check for existence of previous error
 	if *dlInfo.FoundErr != nil {
 		return
@@ -208,6 +206,8 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 	}
 	respReader := bytes.NewReader(response.Body()) // performance issue?
 	fasthttp.ReleaseResponse(response)
+
+	dlInfo.SWG.Done() // let parsing not be throttled
 
 	// parse HTML for querying purposes
 	document, err := goquery.NewDocumentFromReader(respReader)
@@ -261,8 +261,8 @@ func (m WuxiaWorldCo) Download(dlInfo downloader.DownloadInfo) {
 			flipNewline = false
 			content := sel.Text()
 
-			// skip annoying "please go to wuxiaworld.co" thing
-			if !strings.HasPrefix(content, "Please go tohttps") {
+			// skip annoying "please go to wuxiaworld.co" thing and empty lines
+			if !strings.HasPrefix(content, "Please go tohttps") && content != "" {
 				chapterContent += strings.TrimSpace(sel.Text())
 			}
 		}
