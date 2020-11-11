@@ -9,7 +9,7 @@ const maxDownloads = 100 // number of "threads"
 // DownloadRange downloads a range of chapters for a novel given the starting and ending index.
 // Note that both the starting and ending index are zero-indexed instead of one-indexed from the user.
 // Returns a slice of downloaded chapter contents and error, if any.
-func DownloadRange(dl WebDownloader, info *NovelInfo, start int, end int) ([]*NovelChapter, error) {
+func DownloadRange(dl Downloader, info *NovelInfo, start int, end int) ([]*NovelChapter, error) {
 	// primitive validation for starting and ending indexes
 	if start > end || start < 0 || end < 0 || start >= len(info.ChapterURLs) || end >= len(info.ChapterURLs) {
 		return nil, ErrInvalidRange
@@ -41,4 +41,9 @@ func DownloadRange(dl WebDownloader, info *NovelInfo, start int, end int) ([]*No
 	}
 
 	return nil, foundErr
+}
+
+// DownloadAll provides a simple wrapper for downloading all chapters of a novel.
+func DownloadAll(dl Downloader, info *NovelInfo) ([]*NovelChapter, error) {
+	return DownloadRange(dl, info, 0, len(info.ChapterURLs)-1)
 }

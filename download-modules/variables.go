@@ -1,3 +1,3 @@
 package downloader
 
-var Modules []WebDownloader
+var Modules []Downloader
