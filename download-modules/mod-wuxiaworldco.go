@@ -31,10 +31,9 @@ var WuxiaWorldCo *modWuxiaWorldCo
 func init() {
 	WuxiaWorldCo = &modWuxiaWorldCo{
 		BasicDownloader: BasicDownloader{
-			WebsiteName: "WuxiaWorld.co",
-			WebsiteURL:  "wuxiaworld.co",
-			Languages:   []string{"Chinese"},
-			WebsiteType: "Aggregate",
+			WebsiteURL: "wuxiaworld.co",
+			Languages:  []string{"Chinese"},
+			Type:       "Aggregate",
 		},
 	}
 	Modules = append(Modules, WuxiaWorldCo)

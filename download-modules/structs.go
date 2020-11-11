@@ -4,16 +4,15 @@ import "github.com/remeh/sizedwaitgroup"
 
 // BasicDownloader holds a basic info and utility functions for downloader modules.
 type BasicDownloader struct {
-	WebDownloader
-	WebsiteName string   // website name
-	WebsiteURL  string   // website URL
-	Languages   []string // website languages (original or translated)
-	WebsiteType string   // [Unused] type of website (translator, aggregate, etc.)
+	Downloader
+	WebsiteURL string   // website URL
+	Type       string   // [Unused] type of website (translator, aggregate, etc.)
+	Languages  []string // website languages (original or translated)
 }
 
 // WebDownloader represents an individual website downloader "module".
 // Contains functions for retrieval, search, etc. and metadata.
-type WebDownloader interface {
+type Downloader interface {
 	Search(string) ([]NovelBasic, error) // searches website using the given query string
 	NovelInfo(NovelBasic) (*NovelInfo, error)
 	Download(info DownloadInfo) // retrieves information from a novel page
