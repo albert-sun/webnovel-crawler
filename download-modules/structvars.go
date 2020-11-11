@@ -51,3 +51,5 @@ type DownloadInfo struct {
 	Index     int             // index of chapters
 	FoundErr  *error          // global error thing?
 }
+
+var Modules []Downloader
