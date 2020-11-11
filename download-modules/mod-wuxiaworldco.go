@@ -11,15 +11,6 @@ import (
 	"strings"
 )
 
-// WuxiaWorld.co (Chinese) (Aggregate) - wuxiaworld.co
-// Last Updated: 11/5/2020
-// ===============================
-// [X] Search       [X] Download
-// [X] Novel Info   [ ] Test cases
-// ===============================
-// Remarks:
-// -
-
 // Main downloader struct
 type modWuxiaWorldCo struct {
 	BasicDownloader
