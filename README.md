@@ -1,8 +1,8 @@
-# novel-downloader
+# webnovel-crawler
 Automated crawler for searching, downloading, and exporting novels from various online sources. 
 
 ## Installation
-`go get -u github.com/albert-sun/novel-downloader`
+`go get -u github.com/albert-sun/webnovel-crawler`
 
 ## Website Support
 The below table lists current support for websites along with development remarks, if specified. 
